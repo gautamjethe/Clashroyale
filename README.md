@@ -1,0 +1,98 @@
+# <p align="center">AstralRoyale</p>
+# <p align="center">Clash Royale server for 1.9.0 - 1.9.3</p>
+# <p align="center">This repository is now discontinued, please wait for the new [AstralRoyale](https://github.com/Greedycell/AstralRoyale) to release!</p>
+[![clash royale](https://img.shields.io/badge/Clash%20Royale-1.9-brightred.svg?style=flat")](https://github.com/Greedycell/AstralRoyaleLegacy/releases/tag/Clients)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+#### A .NET Core 2017 Clash Royale Server (v1.9.0 - v1.9.3)
+##### Need help? Join our [Discord](https://discord.gg/mUredE6CTU)
+#### Want to help us? Fork this project and you could try add stuff!
+
+#### CLIENTS DOWNLOAD: https://github.com/Greedycell/AstralRoyaleLegacy/releases/tag/Clients
+#### PORT FORWARD APP DOWNLOAD: https://github.com/Greedycell/AstralRoyaleLegacy/releases/tag/PortForward
+
+## [Changelogs (click to view)](https://raw.githubusercontent.com/Greedycell/AstralRoyaleLegacy/refs/heads/master/repo_changelogs)
+
+## Features
+```
+1. More commands
+2. Searchable clans
+3. Maintenance system.
+4. Clan Commands (including non admin/admin commands + added /admin & /ban command)
+5. Update check if the app's version is incorrect
+6. Extended the 2v2 button timestamp to 2038 (I did this so you can see the 2v2 button)
+7. Username, clan name/description/chat filtering system
+8. Battle System
+9. Friendly Battle
+10. Shop
+11. Upgrading
+12. Arena map fixes
+13. Gem Packs (complete but all of them only give 1000 gems for now)
+14. 2v2 round results working
+15. Donations (donations send but you can't donate to the donation requester)
+16. Sending Clan Mail
+17. Content Patch Server (Part of the content patch to download files from a HTTP server)
+```
+
+## Partial Features
+```
+1. Achievements
+2. Friends system (for now you can't accept the requests from a link will come soon)
+```
+
+## Incomplete Features
+```
+1. Reporting Users
+2. Buying cards from the shop with gems
+3. Battle Logs
+4. Battle End Results
+5. Chest Slots
+```
+
+## Wiki
+[See the wiki for a tutorials](https://github.com/Greedycell/AstralRoyaleLegacy/wiki/)
+
+## How to start
+
+#### Requirements:
+  - [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+  - [UwAmp (includes phpMyAdmin & MySQL)](https://www.uwamp.com/en/?page=download)
+
+```
+If you're on Windows, the ClashRoyale folder has bat files to run the server or you can use the commands below.
+If you're on Linux run the commands below.
+```
+
+###### Main Server:
+```
+cd /where/your/directory/you/put/ClashRoyale
+dotnet publish "ClashRoyale.csproj" -c Release -o app && cp -f filter.json app/
+```
+
+#### Run the server:
+
+```
+Run the port forward app and then set both local and external port to 9339.
+Run UwAmp and start the server, open https://localhost/mysql then enter username and password as "root".
+Make a new Database named "ardb" and create it then after click "ardb" and go to ClashRoyale folder then open GameAssets then drag "database.sql" into the Database page and it should import the sql file.
+```
+
+###### Main Server:
+```dotnet app/ClashRoyale.dll```
+
+```
+When your server says that the configuration file has been added.
+Find the config.json file (located in ClashRoyale folder) and open it.
+Change the password to "root".
+Change MinTrophies to 15 and change MaxTrophies to 50. You can change it to whatever you want.
+Change DefaultGold, DefaultGems to any value but I recommend setting it to "100000000" if you want to progress faster.
+Change DefaultLevel, PLEASE CHANGE THIS VALUE TO 1 - 13. DO NOT HAVE "DefaultLevel" SET TO 0 OR ELSE IT CRASHES THE CR APP.
+Optional Step: You can change update_url to the download page of your website.
+Important Note: If the default values randomly reset, you should edit the Default values in ClashRoyale\Core\Configuration.cs and set those values to what you want and run publish.bat to publish all changes.
+
+NOTE: THE APK & IPA STEPS ARE IN THE WIKI PAGE!dotnet publish \"ClashRoyale.csproj\" -c Release -o app && copy /Y filter.json app\
+
+```
+
+## Need help?
+Ask for help in my [Discord server](https://discord.gg/mUredE6CTU) or open an issue.
