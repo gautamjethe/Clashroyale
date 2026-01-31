@@ -9,13 +9,14 @@ namespace ClashRoyale.Utilities.Utils
             get
             {
                 var now = DateTime.UtcNow;
+                DateTime nextMonth;
 
                 if (now.Month != 12)
-                    return (int) (new DateTime(now.Year, now.Month + 1, 1, now.Hour,
-                                      now.Minute, now.Second) - now).TotalSeconds;
+                    nextMonth = new DateTime(now.Year, now.Month + 1, 1, 0, 0, 0);
+                else
+                    nextMonth = new DateTime(now.Year + 1, 1, 1, 0, 0, 0);
 
-                return (int) (new DateTime(now.Year + 1, 1, 1, now.Hour,
-                                  now.Minute, now.Second) - now).TotalSeconds;
+                return (int) (nextMonth - now).TotalSeconds;
             }
         }
 
