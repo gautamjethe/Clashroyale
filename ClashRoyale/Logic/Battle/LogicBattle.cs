@@ -1135,8 +1135,8 @@ namespace ClashRoyale.Logic.Battle
 
             try
             {
-                // Check if battle time has run out - end battle for all players
-                if (BattleSeconds <= 0 && Count > 0)
+                // Check if battle time has run out (3 minutes = 180 seconds) - end battle for all players
+                if (BattleSeconds >= 180 && Count > 0)
                 {
                     await EndBattleNormally();
                     return;
