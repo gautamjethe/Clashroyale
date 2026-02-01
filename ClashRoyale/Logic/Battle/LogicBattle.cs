@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Timers;
 using ClashRoyale.Core.Cluster;
 using ClashRoyale.Extensions;
@@ -1135,13 +1134,6 @@ namespace ClashRoyale.Logic.Battle
 
             try
             {
-                // Check if battle time has run out - end battle for all players
-                if (BattleSeconds <= 0)
-                {
-                    await EndBattleForAllPlayers();
-                    return;
-                }
-
                 foreach (var player in ToArray())
                     if (player.Device.IsConnected)
                     {
@@ -1149,70 +1141,34 @@ namespace ClashRoyale.Logic.Battle
                         {
                             if (BattleSeconds <= 10) continue;
 
-                            // Determine winner based on crowns
-                            bool isWinner;
-                            if (Is2V2 && Count >= 4)
-                            {
-                                // For 2v2 battles, compare team crowns (players 0,1 vs players 2,3)
-                                var team1Crowns = (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
-                                var team2Crowns = (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
-                                var playerTeam = player == this[0] || player == this[1] ? 1 : 2;
-                                isWinner = (playerTeam == 1 && team1Crowns >= team2Crowns) ||
-                                         (playerTeam == 2 && team2Crowns >= team1Crowns);
-                            }
-                            else if (Count >= 2)
-                            {
-                                // For 1v1 battles, compare individual crowns
-                                var player1 = this[0];
-                                var player2 = this[1];
-                                var player1Crowns = player1?.Home?.Crowns ?? 0;
-                                var player2Crowns = player2?.Home?.Crowns ?? 0;
-                                isWinner = (player == player1 && player1Crowns >= player2Crowns) ||
-                                         (player == player2 && player2Crowns >= player1Crowns);
-                            }
-                            else
-                            {
-                                isWinner = true; // Default to winner if battle structure is unknown
-                            }
-
                             var rnd = new Random();
                             var trophies = IsFriendly || Is2V2 ? 0 : rnd.Next(MinTrophies, MaxTrophy);
 
                             // Normal battle
                             if (!IsFriendly && !IsTournament && !Is2V2)
                             {
-                                if (isWinner)
-                                {
-                                    player.Home.AddCrowns(3);
-                                    player.Home.Arena.AddTrophies(trophies);
-                                }
-                                else
-                                {
-                                    player.Home.Arena.AddTrophies(-trophies);
-                                }
+                                player.Home.AddCrowns(3);
+                                player.Home.Arena.AddTrophies(trophies);
 
                                 await new BattleResultMessage(player.Device)
                                 {
-                                    BattleResultType = isWinner ? 1 : 0,
-                                    TrophyReward = isWinner ? trophies : -trophies,
-                                    OpponentTrophyReward = isWinner ? -trophies : trophies,
-                                    OwnCrowns = GetPlayerTeamCrowns(player),
-                                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                                    BattleResultType = 1,
+                                    TrophyReward = trophies,
+                                    OpponentTrophyReward = -trophies,
+                                    OwnCrowns = 0,
+                                    OpponentCrowns = 0,
                                 }.SendAsync();
                             }
                             // Tournament battle
                             else if (IsTournament)
                             {
-                                if (isWinner)
-                                {
-                                    player.Home.AddCrowns(3);
-                                }
+                                player.Home.AddCrowns(3);
 
                                 await new BattleResultMessage(player.Device)
                                 {
-                                    BattleResultType = isWinner ? 1 : 0,
-                                    OwnCrowns = GetPlayerTeamCrowns(player),
-                                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                                    BattleResultType = 1,
+                                    OwnCrowns = 0,
+                                    OpponentCrowns = 0,
                                 }.SendAsync();
                             }
                             // Friendly battle
@@ -1220,9 +1176,9 @@ namespace ClashRoyale.Logic.Battle
                             {
                                 await new BattleResultMessage(player.Device)
                                 {
-                                    BattleResultType = isWinner ? 1 : 0,
-                                    OwnCrowns = GetPlayerTeamCrowns(player),
-                                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                                    BattleResultType = 1,
+                                    OwnCrowns = 0,
+                                    OpponentCrowns = 0,
                                 }.SendAsync();
                             }
                             // 2v2 battle
@@ -1230,9 +1186,9 @@ namespace ClashRoyale.Logic.Battle
                             {
                                 await new BattleResultMessage(player.Device)
                                 {
-                                    BattleResultType = isWinner ? 1 : 0,
-                                    OwnCrowns = GetPlayerTeamCrowns(player),
-                                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                                    BattleResultType = 1,
+                                    OwnCrowns = 0,
+                                    OpponentCrowns = 0,
                                 }.SendAsync();
                             }
 
@@ -1281,145 +1237,6 @@ namespace ClashRoyale.Logic.Battle
         ///     Remove a player from the battle and stop it when it's empty
         /// </summary>
         /// <param name="player"></param>
-        private int GetPlayerTeamCrowns(Player player)
-        {
-            if (!Is2V2 || Count < 4) return player?.Home?.Crowns ?? 0;
-
-            // Determine which team the player is on
-            if (player == this[0] || player == this[1])
-                return (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
-            else
-                return (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
-        }
-
-        private int GetOpponentTeamCrowns(Player player)
-        {
-            if (!Is2V2 || Count < 4) return 0;
-
-            // Return the opposing team's crowns
-            if (player == this[0] || player == this[1])
-                return (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
-            else
-                return (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
-        }
-
-        private async Task EndBattleForAllPlayers()
-        {
-            // Determine winners based on crowns
-            if (Is2V2 && Count >= 4)
-            {
-                // For 2v2 battles, compare team crowns (players 0,1 vs players 2,3)
-                var team1Crowns = (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
-                var team2Crowns = (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
-
-                var team1Wins = team1Crowns >= team2Crowns;
-                var team2Wins = team2Crowns >= team1Crowns;
-
-                // Send results to all players
-                for (int i = 0; i < Count; i++)
-                {
-                    var player = this[i];
-                    if (player == null) continue;
-
-                    var playerTeam = i < 2 ? 1 : 2;
-                    var isWinner = (playerTeam == 1 && team1Wins) || (playerTeam == 2 && team2Wins);
-
-                    await SendBattleResult(player, isWinner, 0); // 0 trophies for timer-based end
-                }
-            }
-            else if (Count >= 2)
-            {
-                // For 1v1 battles, compare individual crowns
-                var player1 = this[0];
-                var player2 = this[1];
-                var player1Crowns = player1?.Home?.Crowns ?? 0;
-                var player2Crowns = player2?.Home?.Crowns ?? 0;
-
-                var player1Wins = player1Crowns >= player2Crowns;
-                var player2Wins = player2Crowns >= player1Crowns;
-
-                // Send results to both players
-                if (player1 != null)
-                    await SendBattleResult(player1, player1Wins, 0);
-                if (player2 != null)
-                    await SendBattleResult(player2, player2Wins, 0);
-            }
-
-            // Stop the battle
-            Stop();
-        }
-
-        private async Task SendBattleResult(Player player, bool isWinner, int trophies)
-        {
-            // Normal battle
-            if (!IsFriendly && !IsTournament && !Is2V2)
-            {
-                if (isWinner)
-                {
-                    player.Home.AddCrowns(3);
-                    player.Home.Arena.AddTrophies(trophies);
-                }
-                else
-                {
-                    player.Home.Arena.AddTrophies(-trophies);
-                }
-
-                await new BattleResultMessage(player.Device)
-                {
-                    BattleResultType = isWinner ? 1 : 0,
-                    TrophyReward = isWinner ? trophies : -trophies,
-                    OpponentTrophyReward = isWinner ? -trophies : trophies,
-                    OwnCrowns = GetPlayerTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
-                }.SendAsync();
-            }
-            // Tournament battle
-            else if (IsTournament)
-            {
-                if (isWinner)
-                {
-                    player.Home.AddCrowns(3);
-                }
-
-                await new BattleResultMessage(player.Device)
-                {
-                    BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = GetPlayerTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
-                }.SendAsync();
-            }
-            // Friendly battle
-            else if (IsFriendly)
-            {
-                await new BattleResultMessage(player.Device)
-                {
-                    BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = GetPlayerTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
-                }.SendAsync();
-            }
-            // 2v2 battle
-            else if (Is2V2)
-            {
-                await new BattleResultMessage(player.Device)
-                {
-                    BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = GetPlayerTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
-                }.SendAsync();
-            }
-
-            // Update stats
-            if (isWinner)
-            {
-                player.Home.TotalWins += 1;
-                player.Home.TotalThreeCrownWins += 1; // Assuming they got 3 crowns to win
-            }
-
-            // Remove player from battle
-            Remove(player);
-        }
-
         public new void Remove(Player player)
         {
             if (Count <= 1)
@@ -1457,67 +1274,31 @@ namespace ClashRoyale.Logic.Battle
             var rnd = new Random();
             var trophies = IsFriendly || Is2V2 ? 0 : rnd.Next(MinTrophies, MaxTrophy);
 
-            // Determine winner based on crowns
-            bool isWinner;
-            if (Is2V2 && Count >= 4)
-            {
-                // For 2v2 battles, compare team crowns (players 0,1 vs players 2,3)
-                var team1Crowns = (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
-                var team2Crowns = (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
-                var playerTeam = player == this[0] || player == this[1] ? 1 : 2;
-                isWinner = (playerTeam == 1 && team1Crowns >= team2Crowns) ||
-                         (playerTeam == 2 && team2Crowns >= team1Crowns);
-            }
-            else if (Count >= 2)
-            {
-                // For 1v1 battles, compare individual crowns
-                var player1 = this[0];
-                var player2 = this[1];
-                var player1Crowns = player1?.Home?.Crowns ?? 0;
-                var player2Crowns = player2?.Home?.Crowns ?? 0;
-                isWinner = (player == player1 && player1Crowns >= player2Crowns) ||
-                         (player == player2 && player2Crowns >= player1Crowns);
-            }
-            else
-            {
-                isWinner = true; // Default to winner if battle structure is unknown
-            }
-
             // Normal battle
             if (!IsFriendly && !IsTournament && !Is2V2)
             {
-                if (isWinner)
-                {
-                    player.Home.AddCrowns(3);
-                    player.Home.Arena.AddTrophies(trophies);
-                }
-                else
-                {
-                    player.Home.Arena.AddTrophies(-trophies);
-                }
+                player.Home.AddCrowns(3);
+                player.Home.Arena.AddTrophies(trophies);
 
                 await new BattleResultMessage(player.Device)
                 {
-                    BattleResultType = isWinner ? 1 : 0,
-                    TrophyReward = isWinner ? trophies : -trophies,
-                    OpponentTrophyReward = isWinner ? -trophies : trophies,
-                    OwnCrowns = GetPlayerTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                    BattleResultType = 1,
+                    TrophyReward = trophies,
+                    OpponentTrophyReward = -trophies,
+                    OwnCrowns = 0,
+                    OpponentCrowns = 0,
                 }.SendAsync();
             }
             // Tournament battle
             else if (IsTournament)
             {
-                if (isWinner)
-                {
-                    player.Home.AddCrowns(3);
-                }
+                player.Home.AddCrowns(3);
 
                 await new BattleResultMessage(player.Device)
                 {
-                    BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = GetPlayerTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                    BattleResultType = 1,
+                    OwnCrowns = 0,
+                    OpponentCrowns = 0,
                 }.SendAsync();
             }
             // Friendly battle
@@ -1525,9 +1306,9 @@ namespace ClashRoyale.Logic.Battle
             {
                 await new BattleResultMessage(player.Device)
                 {
-                    BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = GetPlayerTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                    BattleResultType = 1,
+                    OwnCrowns = 0,
+                    OpponentCrowns = 0,
                 }.SendAsync();
             }
             // 2v2 battle
@@ -1535,9 +1316,9 @@ namespace ClashRoyale.Logic.Battle
             {
                 await new BattleResultMessage(player.Device)
                 {
-                    BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = GetPlayerTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                    BattleResultType = 1,
+                    OwnCrowns = 0,
+                    OpponentCrowns = 0,
                 }.SendAsync();
             }            
 
