@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Timers;
 using ClashRoyale.Core.Cluster;
 using ClashRoyale.Extensions;
