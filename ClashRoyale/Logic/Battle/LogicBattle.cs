@@ -1142,13 +1142,30 @@ namespace ClashRoyale.Logic.Battle
                             if (BattleSeconds <= 10) continue;
 
                             // Determine winner based on crowns
-                            var player1 = this[0];
-                            var player2 = this[1];
-                            var player1Crowns = player1?.Home?.Crowns ?? 0;
-                            var player2Crowns = player2?.Home?.Crowns ?? 0;
-
-                            var isWinner = (player == player1 && player1Crowns >= player2Crowns) ||
+                            bool isWinner;
+                            if (Is2V2 && Count >= 4)
+                            {
+                                // For 2v2 battles, compare team crowns (players 0,1 vs players 2,3)
+                                var team1Crowns = (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
+                                var team2Crowns = (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
+                                var playerTeam = player == this[0] || player == this[1] ? 1 : 2;
+                                isWinner = (playerTeam == 1 && team1Crowns >= team2Crowns) ||
+                                         (playerTeam == 2 && team2Crowns >= team1Crowns);
+                            }
+                            else if (Count >= 2)
+                            {
+                                // For 1v1 battles, compare individual crowns
+                                var player1 = this[0];
+                                var player2 = this[1];
+                                var player1Crowns = player1?.Home?.Crowns ?? 0;
+                                var player2Crowns = player2?.Home?.Crowns ?? 0;
+                                isWinner = (player == player1 && player1Crowns >= player2Crowns) ||
                                          (player == player2 && player2Crowns >= player1Crowns);
+                            }
+                            else
+                            {
+                                isWinner = true; // Default to winner if battle structure is unknown
+                            }
 
                             var rnd = new Random();
                             var trophies = IsFriendly || Is2V2 ? 0 : rnd.Next(MinTrophies, MaxTrophy);
@@ -1171,8 +1188,8 @@ namespace ClashRoyale.Logic.Battle
                                     BattleResultType = isWinner ? 1 : 0,
                                     TrophyReward = isWinner ? trophies : -trophies,
                                     OpponentTrophyReward = isWinner ? -trophies : trophies,
-                                    OwnCrowns = player.Home.Crowns,
-                                    OpponentCrowns = (player == player1 ? player2 : player1)?.Home?.Crowns ?? 0,
+                                    OwnCrowns = GetPlayerTeamCrowns(player),
+                                    OpponentCrowns = GetOpponentTeamCrowns(player),
                                 }.SendAsync();
                             }
                             // Tournament battle
@@ -1186,8 +1203,8 @@ namespace ClashRoyale.Logic.Battle
                                 await new BattleResultMessage(player.Device)
                                 {
                                     BattleResultType = isWinner ? 1 : 0,
-                                    OwnCrowns = player.Home.Crowns,
-                                    OpponentCrowns = (player == player1 ? player2 : player1)?.Home?.Crowns ?? 0,
+                                    OwnCrowns = GetPlayerTeamCrowns(player),
+                                    OpponentCrowns = GetOpponentTeamCrowns(player),
                                 }.SendAsync();
                             }
                             // Friendly battle
@@ -1196,8 +1213,8 @@ namespace ClashRoyale.Logic.Battle
                                 await new BattleResultMessage(player.Device)
                                 {
                                     BattleResultType = isWinner ? 1 : 0,
-                                    OwnCrowns = player.Home.Crowns,
-                                    OpponentCrowns = (player == player1 ? player2 : player1)?.Home?.Crowns ?? 0,
+                                    OwnCrowns = GetPlayerTeamCrowns(player),
+                                    OpponentCrowns = GetOpponentTeamCrowns(player),
                                 }.SendAsync();
                             }
                             // 2v2 battle
@@ -1206,8 +1223,8 @@ namespace ClashRoyale.Logic.Battle
                                 await new BattleResultMessage(player.Device)
                                 {
                                     BattleResultType = isWinner ? 1 : 0,
-                                    OwnCrowns = player.Home.Crowns,
-                                    OpponentCrowns = (player == player1 ? player2 : player1)?.Home?.Crowns ?? 0,
+                                    OwnCrowns = GetPlayerTeamCrowns(player),
+                                    OpponentCrowns = GetOpponentTeamCrowns(player),
                                 }.SendAsync();
                             }
 
@@ -1256,6 +1273,28 @@ namespace ClashRoyale.Logic.Battle
         ///     Remove a player from the battle and stop it when it's empty
         /// </summary>
         /// <param name="player"></param>
+        private int GetPlayerTeamCrowns(Player player)
+        {
+            if (!Is2V2 || Count < 4) return player?.Home?.Crowns ?? 0;
+
+            // Determine which team the player is on
+            if (player == this[0] || player == this[1])
+                return (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
+            else
+                return (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
+        }
+
+        private int GetOpponentTeamCrowns(Player player)
+        {
+            if (!Is2V2 || Count < 4) return 0;
+
+            // Return the opposing team's crowns
+            if (player == this[0] || player == this[1])
+                return (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
+            else
+                return (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
+        }
+
         public new void Remove(Player player)
         {
             if (Count <= 1)
@@ -1294,13 +1333,30 @@ namespace ClashRoyale.Logic.Battle
             var trophies = IsFriendly || Is2V2 ? 0 : rnd.Next(MinTrophies, MaxTrophy);
 
             // Determine winner based on crowns
-            var player1 = this[0];
-            var player2 = this[1];
-            var player1Crowns = player1?.Home?.Crowns ?? 0;
-            var player2Crowns = player2?.Home?.Crowns ?? 0;
-
-            var isWinner = (player == player1 && player1Crowns >= player2Crowns) ||
+            bool isWinner;
+            if (Is2V2 && Count >= 4)
+            {
+                // For 2v2 battles, compare team crowns (players 0,1 vs players 2,3)
+                var team1Crowns = (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
+                var team2Crowns = (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
+                var playerTeam = player == this[0] || player == this[1] ? 1 : 2;
+                isWinner = (playerTeam == 1 && team1Crowns >= team2Crowns) ||
+                         (playerTeam == 2 && team2Crowns >= team1Crowns);
+            }
+            else if (Count >= 2)
+            {
+                // For 1v1 battles, compare individual crowns
+                var player1 = this[0];
+                var player2 = this[1];
+                var player1Crowns = player1?.Home?.Crowns ?? 0;
+                var player2Crowns = player2?.Home?.Crowns ?? 0;
+                isWinner = (player == player1 && player1Crowns >= player2Crowns) ||
                          (player == player2 && player2Crowns >= player1Crowns);
+            }
+            else
+            {
+                isWinner = true; // Default to winner if battle structure is unknown
+            }
 
             // Normal battle
             if (!IsFriendly && !IsTournament && !Is2V2)
