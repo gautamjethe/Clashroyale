@@ -20,6 +20,35 @@ namespace ClashRoyale.Utilities.Utils
             }
         }
 
+        public static int GetNextMonthEndUnixTimestamp
+        {
+            get
+            {
+                var now = DateTime.UtcNow;
+                DateTime nextMonth;
+
+                if (now.Month != 12)
+                    nextMonth = new DateTime(now.Year, now.Month + 1, 1, 0, 0, 0);
+                else
+                    nextMonth = new DateTime(now.Year + 1, 1, 1, 0, 0, 0);
+
+                return (int) nextMonth.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+            }
+        }
+
+        public static string GetNextMonthName()
+        {
+            var now = DateTime.UtcNow;
+            DateTime nextMonth;
+
+            if (now.Month != 12)
+                nextMonth = new DateTime(now.Year, now.Month + 1, 1);
+            else
+                nextMonth = new DateTime(now.Year + 1, 1, 1);
+
+            return nextMonth.ToString("MMMM yyyy");
+        }
+
         public static int GetSecondsUntilTomorrow
         {
             get
