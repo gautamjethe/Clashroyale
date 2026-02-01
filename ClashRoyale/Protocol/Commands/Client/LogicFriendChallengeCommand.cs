@@ -21,29 +21,21 @@ namespace ClashRoyale.Protocol.Commands.Client
 
         public override void Decode()
         {
-            try
-            {
-                Message = Reader.ReadScString();
-                Reader.ReadBoolean();
+            Message = Reader.ReadScString();
+            Reader.ReadBoolean();
 
-                Reader.ReadVInt(); // ClassId
-                GameMode = Reader.ReadVInt(); // InstanceId
+            Reader.ReadVInt(); // ClassId
+            GameMode = Reader.ReadVInt(); // InstanceId
 
-                Reader.ReadVInt();
-                Reader.ReadVInt();
+            Reader.ReadVInt();
+            Reader.ReadVInt();
 
-                Reader.ReadVInt();
-                Reader.ReadVInt();
+            Reader.ReadVInt();
+            Reader.ReadVInt();
 
-                Reader.ReadVInt();
+            Reader.ReadVInt();
 
-                Arena = Reader.ReadVInt();
-            }
-            catch (Exception ex)
-            {
-                Logger.Log($"LogicFriendChallengeCommand decode error: {ex.Message}, Buffer readable bytes: {Reader.ReadableBytes}", GetType(), ErrorLevel.Error);
-                throw;
-            }
+            Arena = Reader.ReadVInt();
         }
 
         public override async void Process()
