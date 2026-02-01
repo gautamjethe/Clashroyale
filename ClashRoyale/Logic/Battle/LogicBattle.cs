@@ -1138,8 +1138,15 @@ namespace ClashRoyale.Logic.Battle
                 // Check if battle time has run out (3 minutes = 180 seconds) - end battle for all players
                 if (BattleSeconds >= 180 && Count > 0)
                 {
+                    Logger.Log($"Battle ending normally - BattleSeconds: {BattleSeconds}", GetType());
                     await EndBattleNormally();
                     return;
+                }
+
+                // Debug: Log battle time
+                if (BattleSeconds % 10 == 0) // Log every 10 seconds
+                {
+                    Logger.Log($"Battle time - Seconds: {BattleSeconds}, Players: {Count}", GetType(), ErrorLevel.Debug);
                 }
 
                 foreach (var player in ToArray())
@@ -1314,8 +1321,8 @@ namespace ClashRoyale.Logic.Battle
                     BattleResultType = isWinner ? 1 : 0,
                     TrophyReward = isWinner ? trophies : -trophies,
                     OpponentTrophyReward = isWinner ? -trophies : trophies,
-                    OwnCrowns = player.Home.Crowns,
-                    OpponentCrowns = GetOpponentCrowns(player),
+                    OwnCrowns = 0,
+                    OpponentCrowns = 0,
                 }.SendAsync();
             }
             // Tournament battle
@@ -1329,8 +1336,8 @@ namespace ClashRoyale.Logic.Battle
                 await new BattleResultMessage(player.Device)
                 {
                     BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = player.Home.Crowns,
-                    OpponentCrowns = GetOpponentCrowns(player),
+                    OwnCrowns = 0,
+                    OpponentCrowns = 0,
                 }.SendAsync();
             }
             // Friendly battle
@@ -1339,8 +1346,8 @@ namespace ClashRoyale.Logic.Battle
                 await new BattleResultMessage(player.Device)
                 {
                     BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = player.Home.Crowns,
-                    OpponentCrowns = GetOpponentCrowns(player),
+                    OwnCrowns = 0,
+                    OpponentCrowns = 0,
                 }.SendAsync();
             }
             // 2v2 battle
@@ -1349,8 +1356,8 @@ namespace ClashRoyale.Logic.Battle
                 await new BattleResultMessage(player.Device)
                 {
                     BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = GetTeamCrowns(player),
-                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                    OwnCrowns = 0,
+                    OpponentCrowns = 0,
                 }.SendAsync();
             }
 
