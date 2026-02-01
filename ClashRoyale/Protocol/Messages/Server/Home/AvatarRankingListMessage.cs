@@ -37,7 +37,6 @@ namespace ClashRoyale.Protocol.Messages.Server
                 player.RankingEntry(Writer);
             }
 
-            Writer.WriteScString(TimeUtils.GetNextMonthName());
             Writer.WriteInt(0);
             Writer.WriteInt(TimeUtils.GetSecondsUntilNextMonth);
         }

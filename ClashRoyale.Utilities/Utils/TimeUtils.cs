@@ -9,14 +9,12 @@ namespace ClashRoyale.Utilities.Utils
             get
             {
                 var now = DateTime.UtcNow;
-                DateTime nextMonth;
+                // Calculate last day of current month
+                DateTime endOfMonth = new DateTime(now.Year, now.Month, DateTime.DaysInMonth(now.Year, now.Month), 23, 59, 59);
 
-                if (now.Month != 12)
-                    nextMonth = new DateTime(now.Year, now.Month + 1, 1, 0, 0, 0);
-                else
-                    nextMonth = new DateTime(now.Year + 1, 1, 1, 0, 0, 0);
-
-                return (int) (nextMonth - now).TotalSeconds;
+                var seconds = (int) (endOfMonth - now).TotalSeconds;
+                // Ensure positive value
+                return Math.Max(0, seconds);
             }
         }
 
