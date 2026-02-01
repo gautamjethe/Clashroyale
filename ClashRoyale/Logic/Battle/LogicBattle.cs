@@ -1376,8 +1376,8 @@ namespace ClashRoyale.Logic.Battle
                     BattleResultType = isWinner ? 1 : 0,
                     TrophyReward = isWinner ? trophies : -trophies,
                     OpponentTrophyReward = isWinner ? -trophies : trophies,
-                    OwnCrowns = player.Home.Crowns,
-                    OpponentCrowns = (player == player1 ? player2 : player1)?.Home?.Crowns ?? 0,
+                    OwnCrowns = GetPlayerTeamCrowns(player),
+                    OpponentCrowns = GetOpponentTeamCrowns(player),
                 }.SendAsync();
             }
             // Tournament battle
@@ -1391,8 +1391,8 @@ namespace ClashRoyale.Logic.Battle
                 await new BattleResultMessage(player.Device)
                 {
                     BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = player.Home.Crowns,
-                    OpponentCrowns = (player == player1 ? player2 : player1)?.Home?.Crowns ?? 0,
+                    OwnCrowns = GetPlayerTeamCrowns(player),
+                    OpponentCrowns = GetOpponentTeamCrowns(player),
                 }.SendAsync();
             }
             // Friendly battle
@@ -1401,8 +1401,8 @@ namespace ClashRoyale.Logic.Battle
                 await new BattleResultMessage(player.Device)
                 {
                     BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = player.Home.Crowns,
-                    OpponentCrowns = (player == player1 ? player2 : player1)?.Home?.Crowns ?? 0,
+                    OwnCrowns = GetPlayerTeamCrowns(player),
+                    OpponentCrowns = GetOpponentTeamCrowns(player),
                 }.SendAsync();
             }
             // 2v2 battle
@@ -1411,8 +1411,8 @@ namespace ClashRoyale.Logic.Battle
                 await new BattleResultMessage(player.Device)
                 {
                     BattleResultType = isWinner ? 1 : 0,
-                    OwnCrowns = player.Home.Crowns,
-                    OpponentCrowns = (player == player1 ? player2 : player1)?.Home?.Crowns ?? 0,
+                    OwnCrowns = GetPlayerTeamCrowns(player),
+                    OpponentCrowns = GetOpponentTeamCrowns(player),
                 }.SendAsync();
             }            
 
