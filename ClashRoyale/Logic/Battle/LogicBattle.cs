@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Timers;
 using ClashRoyale.Core.Cluster;
 using ClashRoyale.Extensions;
@@ -1134,6 +1135,13 @@ namespace ClashRoyale.Logic.Battle
 
             try
             {
+                // Check if battle time has run out - end battle for all players
+                if (BattleSeconds <= 0 && Count > 0)
+                {
+                    await EndBattleNormally();
+                    return;
+                }
+
                 foreach (var player in ToArray())
                     if (player.Device.IsConnected)
                     {
@@ -1237,6 +1245,149 @@ namespace ClashRoyale.Logic.Battle
         ///     Remove a player from the battle and stop it when it's empty
         /// </summary>
         /// <param name="player"></param>
+        private async Task EndBattleNormally()
+        {
+            var trophies = IsFriendly || Is2V2 ? 0 : new Random().Next(MinTrophies, MaxTrophy);
+
+            if (Is2V2 && Count >= 4)
+            {
+                // 2v2 battle - compare team crowns
+                var team1Crowns = (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
+                var team2Crowns = (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
+
+                bool team1Wins = team1Crowns >= team2Crowns;
+                bool team2Wins = team2Crowns >= team1Crowns;
+
+                // Send results to all team 1 players
+                for (int i = 0; i < 2; i++)
+                {
+                    var player = this[i];
+                    if (player != null)
+                        await SendBattleResult(player, team1Wins, trophies);
+                }
+
+                // Send results to all team 2 players
+                for (int i = 2; i < 4; i++)
+                {
+                    var player = this[i];
+                    if (player != null)
+                        await SendBattleResult(player, team2Wins, trophies);
+                }
+            }
+            else if (Count >= 2)
+            {
+                // 1v1 battle - compare individual crowns
+                var player1 = this[0];
+                var player2 = this[1];
+                var player1Crowns = player1?.Home?.Crowns ?? 0;
+                var player2Crowns = player2?.Home?.Crowns ?? 0;
+
+                bool player1Wins = player1Crowns >= player2Crowns;
+                bool player2Wins = player2Crowns >= player1Crowns;
+
+                if (player1 != null)
+                    await SendBattleResult(player1, player1Wins, trophies);
+                if (player2 != null)
+                    await SendBattleResult(player2, player2Wins, trophies);
+            }
+
+            Stop();
+        }
+
+        private async Task SendBattleResult(Player player, bool isWinner, int trophies)
+        {
+            // Normal battle
+            if (!IsFriendly && !IsTournament && !Is2V2)
+            {
+                if (isWinner)
+                {
+                    player.Home.AddCrowns(3);
+                    player.Home.Arena.AddTrophies(trophies);
+                }
+                else
+                {
+                    player.Home.Arena.AddTrophies(-trophies);
+                }
+
+                await new BattleResultMessage(player.Device)
+                {
+                    BattleResultType = isWinner ? 1 : 0,
+                    TrophyReward = isWinner ? trophies : -trophies,
+                    OpponentTrophyReward = isWinner ? -trophies : trophies,
+                    OwnCrowns = player.Home.Crowns,
+                    OpponentCrowns = GetOpponentCrowns(player),
+                }.SendAsync();
+            }
+            // Tournament battle
+            else if (IsTournament)
+            {
+                if (isWinner)
+                {
+                    player.Home.AddCrowns(3);
+                }
+
+                await new BattleResultMessage(player.Device)
+                {
+                    BattleResultType = isWinner ? 1 : 0,
+                    OwnCrowns = player.Home.Crowns,
+                    OpponentCrowns = GetOpponentCrowns(player),
+                }.SendAsync();
+            }
+            // Friendly battle
+            else if (IsFriendly)
+            {
+                await new BattleResultMessage(player.Device)
+                {
+                    BattleResultType = isWinner ? 1 : 0,
+                    OwnCrowns = player.Home.Crowns,
+                    OpponentCrowns = GetOpponentCrowns(player),
+                }.SendAsync();
+            }
+            // 2v2 battle
+            else if (Is2V2)
+            {
+                await new BattleResultMessage(player.Device)
+                {
+                    BattleResultType = isWinner ? 1 : 0,
+                    OwnCrowns = GetTeamCrowns(player),
+                    OpponentCrowns = GetOpponentTeamCrowns(player),
+                }.SendAsync();
+            }
+
+            if (isWinner)
+            {
+                player.Home.TotalWins += 1;
+                player.Home.TotalThreeCrownWins += 1;
+            }
+
+            Remove(player);
+        }
+
+        private int GetOpponentCrowns(Player player)
+        {
+            if (Count < 2) return 0;
+            var opponent = player == this[0] ? this[1] : this[0];
+            return opponent?.Home?.Crowns ?? 0;
+        }
+
+        private int GetTeamCrowns(Player player)
+        {
+            if (!Is2V2 || Count < 4) return player?.Home?.Crowns ?? 0;
+            if (player == this[0] || player == this[1])
+                return (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
+            else
+                return (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
+        }
+
+        private int GetOpponentTeamCrowns(Player player)
+        {
+            if (!Is2V2 || Count < 4) return 0;
+            if (player == this[0] || player == this[1])
+                return (this[2]?.Home?.Crowns ?? 0) + (this[3]?.Home?.Crowns ?? 0);
+            else
+                return (this[0]?.Home?.Crowns ?? 0) + (this[1]?.Home?.Crowns ?? 0);
+        }
+
         public new void Remove(Player player)
         {
             if (Count <= 1)
